@@ -2,6 +2,8 @@
 // It takes an email from inputData.email, performs the correction if needed,
 // and outputs the result as correctedEmail for use in subsequent steps.
 
+// maintainer: patrick.haley@gjgardner.com
+
 function fixEmailTypo(email) {
     if (typeof email !== 'string') {
         throw new Error('Input must be a string');
