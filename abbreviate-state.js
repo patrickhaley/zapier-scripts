@@ -2,6 +2,7 @@
 
 // Keys are lowercase, cleaned versions of possible inputs (full names, common variations, abbreviations)
 // Values are the official UPPERCASE abbreviations.
+
 const stateMap = {
   // US States & Territories (Add more variations as needed)
   'alabama': 'AL', 'al': 'AL',

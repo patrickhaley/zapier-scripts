@@ -1,5 +1,6 @@
 // --- Helper Function for Title Casing ---
 // Handles single words and multi-word strings correctly.
+
 function toTitleCase(str) {
     if (!str) {
       return ""; // Return empty if input is null, undefined, or empty
