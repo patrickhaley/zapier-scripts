@@ -1,5 +1,23 @@
-// --- Helper Function for Title Casing ---
-// Handles single words and multi-word strings correctly.
+/**
+ * Zapier Code Step: Parse a full name into first and last name.
+ *
+ * Splits a full name string into separate firstName and lastName fields,
+ * applying title casing to each part. If only one word is provided, it
+ * becomes firstName and lastName is set to "-".
+ *
+ * Examples:
+ * - "jane doe"        → { firstName: "Jane", lastName: "Doe" }
+ * - "JANE MIDDLE DOE" → { firstName: "Jane Middle", lastName: "Doe" }
+ * - "jane"            → { firstName: "Jane", lastName: "-" }
+ * - null / ""         → { firstName: "", lastName: "" }
+ *
+ * Input:
+ * - inputData.fullName: The full name string to parse
+ *
+ * Output:
+ * - firstName: All words except the last, title cased
+ * - lastName:  The last word, title cased (or "-" for single-word names)
+ */
 
 function toTitleCase(str) {
     if (!str) {

@@ -1,23 +1,26 @@
 # Zapier Scripts Collection
 
-This repository serves as a collection of custom JavaScript scripts created for use in Zapier's Code Steps. These scripts automate various processes and enhance the functionality of Zaps.
+A collection of standalone JavaScript scripts for use in Zapier Code Steps. Each script reads from `inputData` and writes to `output`.
 
-## Purpose
+## Repository Structure
 
-The scripts in this repository are designed to:
-- Extend Zapier's built-in functionality
-- Handle complex data transformations
-- Automate repetitive tasks
-- Solve specific workflow challenges
+```
+scripts/         # All Zapier Code Step scripts (named: domain-action.js)
+  email-fix-typo.js
+  name-parse.js
+  state-abbreviate.js
+  transcript-clean.js
+```
 
 ## Usage
 
-Each script in this repository can be copied and pasted into a Zapier Code Step. The scripts are typically used to:
-1. Transform data between steps
-2. Clean or validate data
-3. Perform custom logic
-4. Handle edge cases
+Copy and paste any script from `scripts/` into a Zapier Code Step. Each script is self-contained with no external dependencies.
 
 ## Scripts
 
-- `fix-invalid-email.js`: Script for correcting and validating email addresses
+| Script | Input | Output | Description |
+|--------|-------|--------|-------------|
+| `email-fix-typo.js` | `inputData.email` | `correctedEmail` | Fixes `.con` → `.com` typos; returns `null` for invalid inputs like "Not Provided" |
+| `name-parse.js` | `inputData.fullName` | `firstName`, `lastName` | Splits full name with title casing; single-word names get `"-"` as last name |
+| `state-abbreviate.js` | `inputData.stateInput` | `stateAbbreviation` | Converts US/Australian state names to official abbreviations |
+| `transcript-clean.js` | `inputData.transcript`, `inputData.firstName` | `processedText` | Sanitizes livechat transcripts: strips HTML, removes dates from timestamps, labels speakers |
