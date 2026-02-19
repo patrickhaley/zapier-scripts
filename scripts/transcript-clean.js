@@ -2,14 +2,17 @@
  * Zapier Code Step: Clean up livechat transcript formatting.
  *
  * - Decodes HTML entities and strips HTML tags (sanitizes user-generated content)
+ * - Converts literal \n sequences to real line breaks
  * - Strips dates from timestamps, keeping only the time
- * - Replaces "I" / "Bot" prefix with "Live Chat"
- * - Replaces "User" prefix with the customer's first name
+ * - Auto-detects the agent name and replaces it with "Live Chat"
+ * - Replaces "User" / "Visitor" prefix with the customer's first name
  *
- * Example:
- * - '<span style="white-space: nowrap;">G.J.</span> Gardner' → "G.J. Gardner"
- * - "I (2025-02-11 8:47am): Hello!"    → "Live Chat (8:47am): Hello!"
- * - "User (2025-02-11 8:48am): Hi"     → "Patrick (8:48am): Hi"
+ * Handles two transcript formats:
+ * - Timestamped: "I (2025-02-11 8:47am): Hello!"  → "Live Chat (8:47am): Hello!"
+ * - Plain:       "Denver: Hello!"                  → "Live Chat: Hello!"
+ *
+ * Agent detection works by scanning for speaker labels at line starts.
+ * Any speaker that isn't "User" or "Visitor" is treated as the agent.
  *
  * Input:
  * - inputData.transcript: The full chat transcript text with timestamps
@@ -41,16 +44,39 @@ function decodeEntities(str) {
         .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
 }
 
-const processed = decodeEntities(transcript)
-    // Strip HTML tags: <span style="...">Some text</span> → Some text
+let processed = decodeEntities(transcript)
+    // Strip HTML tags
     .replace(/<[^>]+>/g, '')
+    // Convert literal \n to real newlines
+    .replace(/\\n/g, '\n')
     // Strip dates from timestamps: "(2025-02-11 8:47am)" → "(8:47am)"
-    .replace(/\(\d{4}-\d{2}-\d{2}\s(\d+:\d+[ap]m)\)/g, '($1)')
-    // Replace "I (" with "Live Chat (" at the start of lines
-    .replace(/^I (\()/gm, 'Live Chat $1')
-    // Replace "Bot (" with "Live Chat (" at the start of lines
-    .replace(/^Bot (\()/gm, 'Live Chat $1')
-    // Replace "User (" with the customer's first name
-    .replace(/^User (\()/gm, (firstName || 'User') + ' $1');
+    .replace(/\(\d{4}-\d{2}-\d{2}\s(\d+:\d+[ap]m)\)/g, '($1)');
+
+// Auto-detect agent name(s): any speaker that isn't "User" or "Visitor".
+// Matches "Name:" or "Name (" at the start of a line.
+const customerNames = new Set(['user', 'visitor']);
+const agentNames = new Set();
+
+for (const line of processed.split('\n')) {
+    const match = line.match(/^([A-Z][a-zA-Z]*)\s*[:(]/);
+    if (match && !customerNames.has(match[1].toLowerCase())) {
+        agentNames.add(match[1]);
+    }
+}
+
+// Replace each detected agent name with "Live Chat"
+for (const name of agentNames) {
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    processed = processed.replace(new RegExp('^' + escaped + '(\\s*[:(])', 'gm'), 'Live Chat$1');
+}
+
+// Replace customer labels with first name (falls back to "User" if missing)
+const customerLabel = firstName || 'User';
+processed = processed
+    .replace(/^User(\s*[:(])/gm, customerLabel + '$1')
+    .replace(/^Visitor(\s*[:(])/gm, customerLabel + '$1');
+
+// Add a blank line between each message for readability
+processed = processed.replace(/\n+/g, '\n\n').trim();
 
 return { processedText: processed };
