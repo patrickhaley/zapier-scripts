@@ -1,7 +1,24 @@
-// --- State Abbreviation Lookup Map ---
-
-// Keys are lowercase, cleaned versions of possible inputs (full names, common variations, abbreviations)
-// Values are the official UPPERCASE abbreviations.
+/**
+ * Zapier Code Step: Convert a state name to its official abbreviation.
+ *
+ * Accepts full names, common abbreviations, and nicknames for US states,
+ * US territories, and Australian states/territories. Input is cleaned
+ * (trimmed, lowercased, non-alpha characters removed) before lookup.
+ * Returns an empty string if no match is found.
+ *
+ * Examples:
+ * - "California" → "CA"
+ * - "cali"       → "CA"
+ * - "new york"   → "NY"
+ * - "queensland" → "QLD"
+ * - "xyz"        → ""
+ *
+ * Input:
+ * - inputData.stateInput: The state name or abbreviation to look up
+ *
+ * Output:
+ * - stateAbbreviation: The official uppercase abbreviation, or "" if not found
+ */
 
 const stateMap = {
   // US States & Territories (Add more variations as needed)

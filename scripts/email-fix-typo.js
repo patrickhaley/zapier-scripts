@@ -1,7 +1,15 @@
-// This Zapier Code step corrects email addresses by replacing '.con' with '.com'.
-// It takes an email from inputData.email, performs the correction if needed,
-// and outputs the result as correctedEmail for use in subsequent steps.
-// Returns null for obviously invalid email addresses like 'Not Provided'.
+/**
+ * Zapier Code Step: Fix common email typos and filter out invalid addresses.
+ *
+ * Corrects ".con" → ".com" typos, then validates the email structure. Returns
+ * null for obviously invalid inputs (e.g., "Not Provided", "n/a", missing @ symbol).
+ *
+ * Input:
+ * - inputData.email: The raw email address string
+ *
+ * Output:
+ * - correctedEmail: The fixed email string, or null if the input is invalid
+ */
 
 function isObviouslyInvalidEmail(email) {
     if (!email || typeof email !== 'string') return true;
