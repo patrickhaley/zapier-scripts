@@ -4,12 +4,12 @@
  * - Decodes HTML entities and strips HTML tags (sanitizes user-generated content)
  * - Converts literal \n sequences to real line breaks
  * - Strips dates from timestamps, keeping only the time
- * - Auto-detects the agent name and replaces it with "Live Chat"
+ * - Auto-detects the agent name and replaces it with "Chat Agent"
  * - Replaces "User" / "Visitor" prefix with the customer's first name
  *
  * Handles two transcript formats:
- * - Timestamped: "I (2025-02-11 8:47am): Hello!"  → "Live Chat (8:47am): Hello!"
- * - Plain:       "Denver: Hello!"                  → "Live Chat: Hello!"
+ * - Timestamped: "I (2025-02-11 8:47am): Hello!"  → "Chat Agent (8:47am): Hello!"
+ * - Plain:       "Denver: Hello!"                  → "Chat Agent: Hello!"
  *
  * Agent detection works by scanning for speaker labels at line starts.
  * Any speaker that isn't "User" or "Visitor" is treated as the agent.
@@ -64,10 +64,10 @@ for (const line of processed.split('\n')) {
     }
 }
 
-// Replace each detected agent name with "Live Chat"
+// Replace each detected agent name with "Chat Agent"
 for (const name of agentNames) {
     const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    processed = processed.replace(new RegExp('^' + escaped + '(\\s*[:(])', 'gm'), 'Live Chat$1');
+    processed = processed.replace(new RegExp('^' + escaped + '(\\s*[:(])', 'gm'), 'Chat Agent$1');
 }
 
 // Replace customer labels with first name (falls back to "User" if missing)
@@ -75,6 +75,19 @@ const customerLabel = firstName || 'User';
 processed = processed
     .replace(/^User(\s*[:(])/gm, customerLabel + '$1')
     .replace(/^Visitor(\s*[:(])/gm, customerLabel + '$1');
+
+// If the first non-empty line has no speaker prefix, it's the automated
+// welcome message — label it as Chat Agent.
+const lines = processed.split('\n');
+for (let i = 0; i < lines.length; i++) {
+    if (lines[i].trim().length > 0) {
+        if (!/^[A-Z][a-zA-Z]*\s*[:(]/.test(lines[i])) {
+            lines[i] = 'Chat Agent: ' + lines[i];
+        }
+        break;
+    }
+}
+processed = lines.join('\n');
 
 // Add a blank line between each message for readability
 processed = processed.replace(/\n+/g, '\n\n').trim();
