@@ -1,14 +1,15 @@
 /**
  * Zapier Code Step: Fix common email typos and filter out invalid addresses.
  *
- * Corrects ".con" → ".com" typos, then validates the email structure. Returns
- * null for obviously invalid inputs (e.g., "Not Provided", "n/a", missing @ symbol).
+ * Corrects ".con" → ".com" typos, lowercases the address, then validates the
+ * email structure. Returns null for obviously invalid inputs (e.g., "Not Provided",
+ * "n/a", missing @ symbol).
  *
  * Input:
  * - inputData.email: The raw email address string
  *
  * Output:
- * - correctedEmail: The fixed email string, or null if the input is invalid
+ * - correctedEmail: The lowercased, fixed email string, or null if the input is invalid
  */
 
 function isObviouslyInvalidEmail(email) {
@@ -94,8 +95,8 @@ function fixEmailTypo(email) {
     }
 
     // Use a regular expression to replace all occurrences of '.con' with '.com'
-    let correctedEmail = email.replace(/\.con/g, '.com');
-    
+    let correctedEmail = email.replace(/\.con/g, '.com').toLowerCase();
+
     return {
         original: email,
         corrected: correctedEmail,
