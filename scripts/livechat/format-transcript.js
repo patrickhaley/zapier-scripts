@@ -52,7 +52,8 @@ let processed = decodeEntities(transcript)
     // Convert literal \n to real newlines
     .replace(/\\n/g, '\n')
     // Strip dates from timestamps: "(2025-02-11 8:47am)" → "(8:47am)"
-    .replace(/\(\d{4}-\d{2}-\d{2}\s(\d+:\d+[ap]m)\)/g, '($1)');
+    // (month/day may be 1 or 2 digits, e.g. "2026-07-6")
+    .replace(/\(\d{4}-\d{1,2}-\d{1,2}\s(\d+:\d+[ap]m)\)/g, '($1)');
 
 // Auto-detect agent name(s): any speaker that isn't "User" or "Visitor".
 // Matches "Name:" or "Name (" at the start of a line.
@@ -79,11 +80,14 @@ processed = processed
     .replace(/^Visitor(\s*[:(])/gm, customerLabel + '$1');
 
 // If the first non-empty line has no speaker prefix, it's the automated
-// welcome message — label it as Chat Agent.
+// welcome message — label it as Chat Agent. Speaker labels can be
+// multi-word (e.g. "Chat Agent", a multi-word customer first name), so
+// check generically for "some label text, then : or (" rather than
+// assuming a single word.
 const lines = processed.split('\n');
 for (let i = 0; i < lines.length; i++) {
     if (lines[i].trim().length > 0) {
-        if (!/^[A-Z][a-zA-Z]*\s*[:(]/.test(lines[i])) {
+        if (!/^[^\n:(]{1,40}[:(]/.test(lines[i])) {
             lines[i] = 'Chat Agent: ' + lines[i];
         }
         break;
