@@ -8,7 +8,14 @@ A collection of standalone JavaScript scripts designed for use in Zapier Code St
 
 ## Repository Structure
 
-All scripts live in `scripts/`. New scripts should be added there.
+All scripts live in `scripts/`, organized into subfolders by scope:
+
+- `scripts/combined/` — full pipelines wired directly into a production Zap step (e.g. `format-middleware-lead.js`, which formats a lead for the middleware/CRM webhook regardless of source)
+- `scripts/generic/` — cross-domain building blocks usable regardless of lead source (e.g. email typo fixing, state abbreviation)
+- `scripts/facebook/` — building blocks specific to Facebook Lead Ads
+- `scripts/livechat/` — building blocks specific to LiveChat
+
+When adding a new script, place it in the folder matching its scope. If it doesn't fit an existing folder, create a new one named for that scope (e.g. `scripts/google-sheets/`).
 
 ## Zapier Code Step Conventions
 

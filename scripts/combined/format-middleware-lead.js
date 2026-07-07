@@ -1,46 +1,87 @@
 /**
- * Zapier Code Step: Clean and format a lead record before posting to the
- * middleware/CRM webhook.
+ * Zapier Code Step: Format a lead record for the middleware, which forwards
+ * it to the CRM. This is the general-purpose lead formatter - use it
+ * regardless of which source triggered the Zap (website chat, Facebook Lead
+ * Ads, a Google Sheet, etc). Only map the Input Data variables that source
+ * actually provides; leave the rest unmapped and they're safely ignored.
  *
- * Combines formatting steps that previously ran as separate Code/Formatter
- * steps against the same LiveChat-lead row:
- * 1. Fix common email typos (".con" -> ".com"), lowercase, and validate.
+ * Steps performed:
+ * 1. Resolve the name:
+ *    - If fullName is mapped (e.g. Facebook Lead Ads gives one combined
+ *      name field), split it into firstName/lastName: the last word
+ *      becomes lastName, everything before it becomes firstName.
+ *      Single-word names get lastName = "-".
+ *    - Otherwise, use the firstName/lastName inputs directly (e.g. a
+ *      source that already gives separate fields).
+ *    Either way the result is title-cased.
+ * 2. Fix common email typos (".con" -> ".com"), lowercase, and validate.
  *    Returns null for obviously invalid addresses (e.g. "Not Provided").
- * 2. Convert a state name/abbreviation/nickname to its official
+ * 3. Convert a state name/abbreviation/nickname to its official
  *    abbreviation (US states/territories and Australian states/territories).
- * 3. Title case firstName, lastName, and city.
- * 4. Clean up the LiveChat transcript (strip HTML, fix timestamps, label
- *    speakers), using the title-cased firstName from step 3 as the
- *    customer's speaker label.
+ * 4. Title case city.
+ * 5. If transcript is mapped (e.g. a LiveChat lead), clean it up (strip
+ *    HTML, fix timestamps, label speakers), using the resolved, title-cased
+ *    firstName as the customer's speaker label. Leaves processedText null
+ *    if no transcript was given.
  *
- * Zapier setup - in the Code step's "Input Data" section, add these six
- * variables (name on the left must match exactly) and map each to the
- * corresponding field from the trigger (the Google Sheet lead row):
- * - email:      the lead's email column
- * - state:      the lead's state column
- * - firstName:  the lead's first name column
- * - lastName:   the lead's last name column
- * - city:       the lead's city column
- * - transcript: the lead's LiveChat transcript column
+ * Zapier setup - standardized Input Data variables (name on the left must
+ * match exactly). Map only the ones your trigger has; leave the rest blank:
+ * - email:      the lead's email
+ * - state:      the lead's state
+ * - city:       the lead's city
+ * - fullName:   a single combined name field (e.g. Facebook Lead Ads)
+ * - firstName:  a separate first name field (e.g. a LiveChat/Sheet lead)
+ * - lastName:   a separate last name field (e.g. a LiveChat/Sheet lead)
+ * - transcript: a chat transcript, if this lead source has one
  *
- * Input:
- * - inputData.email: The raw email address string
- * - inputData.state: The state name or abbreviation to look up
- * - inputData.firstName: The raw first name string
- * - inputData.lastName: The raw last name string
- * - inputData.city: The raw city string
- * - inputData.transcript: The full chat transcript text with timestamps
- *
- * Output:
- * - correctedEmail: The lowercased, fixed email string, or null if invalid
- * - stateAbbreviation: The official uppercase abbreviation, or "" if not found
- * - firstName: Title-cased first name
- * - lastName: Title-cased last name
- * - city: Title-cased city
- * - processedText: The cleaned transcript, or null if no transcript was given
+ * Output (always all six keys, regardless of lead source):
+ * - cleanedEmail: The lowercased, fixed email string, or null if invalid
+ * - cleanedState: The official uppercase abbreviation, or "" if not found
+ * - cleanedFirstName: Title-cased first name (parsed from fullName if that's what was given)
+ * - cleanedLastName: Title-cased last name (parsed from fullName if that's what was given; "-" for single-word names)
+ * - cleanedCity: Title-cased city
+ * - cleanedTranscript: The cleaned transcript, or null if no transcript was given
  */
 
-// --- Step 1: Email typo fix ---
+// --- Step 1: Name resolution ---
+
+function toTitleCase(str) {
+    if (!str) {
+        return "";
+    }
+    return str.trim().toLowerCase()
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+}
+
+// Splits a combined name the same way parse-name.js does: last word is the
+// last name, everything before it is the first name. Returns null if there's
+// no full name to parse, so the caller can fall back to firstName/lastName.
+function parseFullName(fullName) {
+    if (!fullName) {
+        return null;
+    }
+
+    const words = fullName.trim().split(/\s+/).filter(word => word.length > 0);
+    if (words.length === 0) {
+        return null;
+    }
+
+    if (words.length === 1) {
+        return { firstName: toTitleCase(words[0]), lastName: "-" };
+    }
+
+    const lastNameWord = words[words.length - 1];
+    const firstNameWords = words.slice(0, -1);
+
+    return {
+        firstName: firstNameWords.map(word => toTitleCase(word)).join(' '),
+        lastName: toTitleCase(lastNameWord)
+    };
+}
+
+// --- Step 2: Email typo fix ---
 
 function isObviouslyInvalidEmail(email) {
     if (!email || typeof email !== 'string') return true;
@@ -110,7 +151,11 @@ function isObviouslyInvalidEmail(email) {
         'to be determined'
     ];
 
-    if (invalidPatterns.some(pattern => normalizedEmail.includes(pattern))) return true;
+    // Match as whole words/phrases, not substrings, so patterns like "na" don't
+    // false-positive on real local parts that happen to contain those letters
+    // (e.g. "bernardmolloy" contains "na").
+    const invalidPatternRegex = new RegExp('\\b(?:' + invalidPatterns.join('|') + ')\\b');
+    if (invalidPatternRegex.test(normalizedEmail)) return true;
 
     // Check for valid characters in local part (basic set)
     const localPartRegex = /^[a-z0-9._-]+$/;
@@ -134,7 +179,7 @@ function fixEmailTypo(email) {
     };
 }
 
-// --- Step 2: State abbreviation lookup ---
+// --- Step 3: State abbreviation lookup ---
 
 const stateMap = {
   // US States & Territories (Add more variations as needed)
@@ -226,18 +271,6 @@ function abbreviateState(stateRaw) {
     return stateAbbreviation;
 }
 
-// --- Step 3: Title casing ---
-
-function toTitleCase(str) {
-    if (!str) {
-        return "";
-    }
-    return str.trim().toLowerCase()
-        .split(' ')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-}
-
 // --- Step 4: Transcript cleanup ---
 
 // Decode HTML entities so encoded payloads (e.g. &lt;script&gt;) become real
@@ -255,8 +288,8 @@ function decodeEntities(str) {
         .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
 }
 
-// customerFirstName should be the title-cased name from step 3, so the
-// speaker label in the transcript matches the name sent to the CRM.
+// customerFirstName should be the resolved, title-cased name from step 1, so
+// the speaker label in the transcript matches the name sent to the CRM.
 function cleanTranscript(transcript, customerFirstName) {
     if (!transcript) {
         return null;
@@ -313,14 +346,17 @@ function cleanTranscript(transcript, customerFirstName) {
 
 // --- Main Logic ---
 
+const parsedName = parseFullName(inputData.fullName);
+const firstName = parsedName ? parsedName.firstName : toTitleCase(inputData.firstName);
+const lastName = parsedName ? parsedName.lastName : toTitleCase(inputData.lastName);
+
 const emailResult = fixEmailTypo(inputData.email);
-const firstName = toTitleCase(inputData.firstName);
 
 output = {
-    correctedEmail: emailResult === null ? null : emailResult.corrected,
-    stateAbbreviation: abbreviateState(inputData.state),
-    firstName: firstName,
-    lastName: toTitleCase(inputData.lastName),
-    city: toTitleCase(inputData.city),
-    processedText: cleanTranscript(inputData.transcript, firstName)
+    cleanedEmail: emailResult === null ? null : emailResult.corrected,
+    cleanedState: abbreviateState(inputData.state),
+    cleanedFirstName: firstName,
+    cleanedLastName: lastName,
+    cleanedCity: toTitleCase(inputData.city),
+    cleanedTranscript: cleanTranscript(inputData.transcript, firstName)
 };

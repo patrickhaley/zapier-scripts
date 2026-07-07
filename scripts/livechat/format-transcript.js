@@ -1,6 +1,8 @@
 /**
- * Zapier Code Step: Clean up livechat transcript formatting.
+ * Zapier Code Step: Reformat a LiveChat transcript for readability.
  *
+ * Full transform for the transcript field only (for basic HTML sanitizing
+ * of transcript + description with no formatting, see sanitize-fields.js):
  * - Decodes HTML entities and strips HTML tags (sanitizes user-generated content)
  * - Converts literal \n sequences to real line breaks
  * - Strips dates from timestamps, keeping only the time
@@ -16,7 +18,7 @@
  *
  * Input:
  * - inputData.transcript: The full chat transcript text with timestamps
- * - inputData.firstName: The customer's first name (from the name-parse step)
+ * - inputData.firstName: The customer's first name (from the parse-name step)
  *
  * Output:
  * - processedText: The cleaned transcript

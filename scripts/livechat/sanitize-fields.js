@@ -1,9 +1,11 @@
 /**
- * Zapier Code Step: Sanitize livechat input fields.
+ * Zapier Code Step: Sanitize LiveChat input fields.
  *
- * Decodes HTML entities and strips HTML tags from the transcript and
- * description fields. This prevents user-generated HTML/script content
- * from passing through to downstream steps (CRM, email, etc.).
+ * Light-touch cleanup only - decodes HTML entities and strips HTML tags
+ * from the transcript and description fields. This prevents user-generated
+ * HTML/script content from passing through to downstream steps (CRM,
+ * email, etc.). For a full transcript reformat (timestamps, speaker
+ * labels), see format-transcript.js.
  *
  * Zapier automatically handles JSON serialization of the returned object,
  * so no manual escaping of quotes/newlines is needed.
