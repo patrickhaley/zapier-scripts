@@ -7,6 +7,7 @@ A collection of standalone JavaScript scripts for use in Zapier Code Steps. Each
 ```
 scripts/         # All Zapier Code Step scripts (named: domain-action.js)
   email-fix-typo.js
+  livechat-lead-format.js
   livechat-sanitize.js
   name-parse.js
   state-abbreviate.js
@@ -22,6 +23,7 @@ Copy and paste any script from `scripts/` into a Zapier Code Step. Each script i
 | Script | Input | Output | Description |
 |--------|-------|--------|-------------|
 | `email-fix-typo.js` | `inputData.email` | `correctedEmail` | Fixes `.con` → `.com` typos; returns `null` for invalid inputs like "Not Provided" |
+| `livechat-lead-format.js` | `inputData.email`, `inputData.state`, `inputData.firstName`, `inputData.lastName`, `inputData.city`, `inputData.transcript` | `correctedEmail`, `stateAbbreviation`, `firstName`, `lastName`, `city`, `processedText` | Combines email typo fix, state abbreviation, name/city title casing, and transcript cleanup for a LiveChat lead row |
 | `livechat-sanitize.js` | `inputData.transcript`, `inputData.description` | `sanitizedTranscript`, `sanitizedDescription` | Strips HTML tags and decodes entities from livechat transcript and description |
 | `name-parse.js` | `inputData.fullName` | `firstName`, `lastName` | Splits full name with title casing; single-word names get `"-"` as last name |
 | `state-abbreviate.js` | `inputData.stateInput` | `stateAbbreviation` | Converts US/Australian state names to official abbreviations |

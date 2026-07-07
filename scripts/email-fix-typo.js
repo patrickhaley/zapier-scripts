@@ -80,7 +80,11 @@ function isObviouslyInvalidEmail(email) {
         'to be determined'
     ];
     
-    if (invalidPatterns.some(pattern => normalizedEmail.includes(pattern))) return true;
+    // Match as whole words/phrases, not substrings, so patterns like "na" don't
+    // false-positive on real local parts that happen to contain those letters
+    // (e.g. "bernardmolloy" contains "na").
+    const invalidPatternRegex = new RegExp('\\b(?:' + invalidPatterns.join('|') + ')\\b');
+    if (invalidPatternRegex.test(normalizedEmail)) return true;
     
     // Check for valid characters in local part (basic set)
     const localPartRegex = /^[a-z0-9._-]+$/;
